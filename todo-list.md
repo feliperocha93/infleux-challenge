@@ -1,0 +1,11 @@
+Run API [x]
+Create Database connection []
+Create some countries (migration?) []
+Create brand controller []
+Create publisher controller []
+Create campaign controller (fetch) []
+Create Thunder Client file []
+Create READ.ME []
+--------------------------------------
+Create production database connection []
+Publish in Heroku []
