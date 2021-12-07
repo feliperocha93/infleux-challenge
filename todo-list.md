@@ -1,6 +1,6 @@
 Run API [x]
-Create Database connection []
-Create some countries (migration?) []
+Create Database connection [x]
+Create some countries []
 Create brand controller []
 Create publisher controller []
 Create campaign controller (fetch) []
