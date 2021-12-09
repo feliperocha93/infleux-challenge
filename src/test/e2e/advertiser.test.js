@@ -1,4 +1,5 @@
 const request = require('supertest');
+const mongoose = require('mongoose');
 const Advertiser = require('../../app/models/advertiser');
 
 const server = require('../../index');
@@ -17,7 +18,7 @@ afterAll(() => {
   server.close();
 });
 
-describe.skip('when to store a advertiser', () => {
+describe('when to store a advertiser', () => {
   beforeAll(() => {
     cleanDb();
   });
@@ -69,9 +70,10 @@ describe('when to find a advertiser', () => {
   const name = 'Find Test';
   let findTestId;
 
-  beforeAll(() => {
+  beforeAll(async () => {
     cleanDb();
-    findTestId = Advertiser.create({ name });
+    const { _id } = await Advertiser.create({ name });
+    findTestId = _id;
     Advertiser.create({ name: testData.name });
   });
 
@@ -92,8 +94,10 @@ describe('when to find a advertiser', () => {
   });
 
   test('should return a not found error when filter by inexistent id', async () => {
+    const id = mongoose.Types.ObjectId();
+
     const { body, status } = await request(server)
-      .get(`${MAIN_ROUTE}/${findTestId}1`);
+      .get(`${MAIN_ROUTE}/${id}`);
 
     expect(status).toBe(404);
     expect(body.error).toBe('advertiser not found');
@@ -114,5 +118,53 @@ describe('when to find a advertiser', () => {
   // TODO: After campaign controller is done
   test.todo('should return advertiser by campaign_id');
 });
-describe.skip('when to update a advertiser', () => {});
+
+describe.skip('when to update a advertiser', () => {
+  const name = 'Update Test';
+  let updateTestId;
+
+  beforeAll(async () => {
+    cleanDb();
+    const { _id } = await Advertiser.create({ name });
+    updateTestId = _id;
+    Advertiser.create({ name: testData.name });
+  });
+
+  test('should update advertiser', async () => {
+    const { body, status } = await request(server)
+      .put(`${MAIN_ROUTE}/${updateTestId}`)
+      .send({
+        name: testData.name,
+      });
+
+    expect(status).toBe(200);
+    expect(body.name).toBe(testData.name);
+
+    const documentUpdated = Advertiser.findById(updateTestId);
+
+    expect(documentUpdated.name).toBe(testData.name);
+  });
+
+  test.each(
+    [false, null, undefined, 0, NaN, ''],
+  )('should not update a advertiser without name', async (newName) => {
+    const { body, status } = await request(server)
+      .put(`${MAIN_ROUTE}/${updateTestId}`)
+      .send({
+        name: newName,
+      });
+
+    expect(status).toBe(400);
+    expect(body.error).toBe('name is required');
+
+    const documentNotUpdated = Advertiser.findById(updateTestId);
+
+    expect(documentNotUpdated.name).toBe(name);
+  });
+
+  // TODO: After campaign controller is done
+  test.todo('should update campaigns_ids');
+  test.todo('should not update if campaigns_ids are invalid');
+});
+
 describe.skip('when to delete a advertiser', () => {});

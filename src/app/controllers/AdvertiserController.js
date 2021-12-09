@@ -12,6 +12,32 @@ class AdvertiserController {
 
     return response.status(201).json(advertiser);
   }
+
+  async index(request, response) {
+    const advertisers = await AdvertisersRepository.findAll();
+
+    return response.json(advertisers);
+  }
+
+  async show(request, response) {
+    const { id } = request.params;
+
+    const advertiser = await AdvertisersRepository.findById(id);
+
+    if (!advertiser) {
+      return response.status(404).json({ error: 'advertiser not found' });
+    }
+
+    return response.json(advertiser);
+  }
+
+  async filter(request, response) {
+    const filter = { ...request.query };
+
+    const advertiser = await AdvertisersRepository.findByFilter(filter);
+
+    return response.json(advertiser);
+  }
 }
 
 module.exports = new AdvertiserController();
