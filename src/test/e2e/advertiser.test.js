@@ -119,7 +119,7 @@ describe('when to find a advertiser', () => {
   test.todo('should return advertiser by campaign_id');
 });
 
-describe.only('when to update a advertiser', () => {
+describe('when to update a advertiser', () => {
   const name = 'Update Test';
   let updateTestId;
 
@@ -167,4 +167,37 @@ describe.only('when to update a advertiser', () => {
   test.todo('should not update if campaigns_ids are invalid');
 });
 
-describe.skip('when to delete a advertiser', () => {});
+describe('when to delete a advertiser', () => {
+  const name = 'Delete Test';
+  let deleteTestId;
+
+  beforeAll(async () => {
+    cleanDb();
+    const { _id } = await Advertiser.create({ name });
+    deleteTestId = _id;
+    Advertiser.create({ name: testData.name });
+  });
+
+  test('should delete advertiser', async () => {
+    const { status } = await request(server)
+      .delete(`${MAIN_ROUTE}/${deleteTestId}`);
+
+    expect(status).toBe(204);
+
+    const deletedAdvertiser = await Advertiser.findById(deleteTestId);
+
+    expect(deletedAdvertiser).toBeNull();
+  });
+
+  test('should return a not found error if advertiser not exist', async () => {
+    const id = mongoose.Types.ObjectId();
+
+    const { body, status } = await request(server).delete(`${MAIN_ROUTE}/${id}`);
+
+    expect(status).toBe(404);
+    expect(body.error).toBe('advertiser not found');
+  });
+
+  // TODO: After campaign controller is done
+  test.todo('should return a error if advertiser has campaign_ids is not empty');
+});

@@ -30,6 +30,12 @@ class AdvertisersRepository {
 
     return advertiser;
   }
+
+  async remove(id) {
+    const advertiser = await Advertiser.findByIdAndRemove(id);
+
+    return advertiser;
+  }
 }
 
 module.exports = new AdvertisersRepository();

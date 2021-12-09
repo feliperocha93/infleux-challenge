@@ -52,6 +52,18 @@ class AdvertiserController {
 
     return response.json(advertiser);
   }
+
+  async delete(request, response) {
+    const { id } = request.params;
+
+    const advertiser = await AdvertisersRepository.remove(id);
+
+    if (!advertiser) {
+      return response.status(404).json({ error: 'advertiser not found' });
+    }
+
+    return response.status(204).send();
+  }
 }
 
 module.exports = new AdvertiserController();

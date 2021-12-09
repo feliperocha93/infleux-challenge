@@ -2,7 +2,7 @@ Console:
   Marcas e publicadores irão publicar os seus serviços (oferta/demanda)
 
 Server:
-  Quando uma marca publica uma campanha, procura a melhor oferta de publicação. 
+  Quando uma marca publica uma campanha, procura a melhor oferta de publicação.
   Quando um publicador publica um espaço, procura a melhor oferta de campanha.
 
 Campanha:
@@ -17,7 +17,7 @@ Publisher:
  country
  campaigns_id []
 
-Brands:
+advertiser:
 id
 name
 campaigns_id []
