@@ -24,6 +24,12 @@ class AdvertisersRepository {
 
     return advertiser;
   }
+
+  async update(id, payload) {
+    const advertiser = await Advertiser.findByIdAndUpdate(id, payload, { new: true });
+
+    return advertiser;
+  }
 }
 
 module.exports = new AdvertisersRepository();

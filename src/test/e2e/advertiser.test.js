@@ -119,7 +119,7 @@ describe('when to find a advertiser', () => {
   test.todo('should return advertiser by campaign_id');
 });
 
-describe.skip('when to update a advertiser', () => {
+describe.only('when to update a advertiser', () => {
   const name = 'Update Test';
   let updateTestId;
 
@@ -128,21 +128,6 @@ describe.skip('when to update a advertiser', () => {
     const { _id } = await Advertiser.create({ name });
     updateTestId = _id;
     Advertiser.create({ name: testData.name });
-  });
-
-  test('should update advertiser', async () => {
-    const { body, status } = await request(server)
-      .put(`${MAIN_ROUTE}/${updateTestId}`)
-      .send({
-        name: testData.name,
-      });
-
-    expect(status).toBe(200);
-    expect(body.name).toBe(testData.name);
-
-    const documentUpdated = Advertiser.findById(updateTestId);
-
-    expect(documentUpdated.name).toBe(testData.name);
   });
 
   test.each(
@@ -157,9 +142,24 @@ describe.skip('when to update a advertiser', () => {
     expect(status).toBe(400);
     expect(body.error).toBe('name is required');
 
-    const documentNotUpdated = Advertiser.findById(updateTestId);
+    const documentNotUpdated = await Advertiser.findById(updateTestId);
 
     expect(documentNotUpdated.name).toBe(name);
+  });
+
+  test('should update advertiser', async () => {
+    const { body, status } = await request(server)
+      .put(`${MAIN_ROUTE}/${updateTestId}`)
+      .send({
+        name: testData.name,
+      });
+
+    expect(status).toBe(200);
+    expect(body.name).toBe(testData.name);
+
+    const documentUpdated = await Advertiser.findById(updateTestId);
+
+    expect(documentUpdated.name).toBe(testData.name);
   });
 
   // TODO: After campaign controller is done

@@ -8,5 +8,6 @@ router.post('/advertisers', AdvertiserController.store);
 router.get('/advertisers/filter', AdvertiserController.filter);
 router.get('/advertisers/:id', AdvertiserController.show);
 router.get('/advertisers', AdvertiserController.index);
+router.put('/advertisers/:id', AdvertiserController.update);
 
 module.exports = router;

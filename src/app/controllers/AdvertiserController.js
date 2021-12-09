@@ -38,6 +38,20 @@ class AdvertiserController {
 
     return response.json(advertiser);
   }
+
+  async update(request, response) {
+    const { id } = request.params;
+
+    const { name } = request.body;
+
+    if (!name) {
+      return response.status(400).json({ error: 'name is required' });
+    }
+
+    const advertiser = await AdvertisersRepository.update(id, { name });
+
+    return response.json(advertiser);
+  }
 }
 
 module.exports = new AdvertiserController();
