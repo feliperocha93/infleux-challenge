@@ -6,7 +6,7 @@ const AdvertiserSchema = new mongoose.Schema({
     require: true,
   },
   campaigns_id: {
-    type: Array,
+    type: [mongoose.SchemaTypes.ObjectId],
     default: [],
   },
 });
