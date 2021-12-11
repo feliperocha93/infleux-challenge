@@ -23,6 +23,32 @@ class PublisherController {
 
     return response.status(201).json(publisher);
   }
+
+  async index(request, response) {
+    const publishers = await PublishersRepository.findAll();
+
+    return response.json(publishers);
+  }
+
+  async show(request, response) {
+    const { id } = request.params;
+
+    const publisher = await PublishersRepository.findById(id);
+
+    if (!publisher) {
+      return response.status(404).json({ error: 'publisher not found' });
+    }
+
+    return response.json(publisher);
+  }
+
+  async filter(request, response) {
+    const filter = { ...request.query };
+
+    const publisher = await PublishersRepository.findByFilter(filter);
+
+    return response.json(publisher);
+  }
 }
 
 module.exports = new PublisherController();

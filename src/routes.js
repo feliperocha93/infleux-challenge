@@ -13,5 +13,8 @@ router.put('/advertisers/:id', AdvertiserController.update);
 router.delete('/advertisers/:id', AdvertiserController.delete);
 
 router.post('/publishers', PublisherController.store);
+router.get('/publishers/filter', PublisherController.filter);
+router.get('/publishers/:id', PublisherController.show);
+router.get('/publishers', PublisherController.index);
 
 module.exports = router;
