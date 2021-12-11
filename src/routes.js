@@ -1,9 +1,12 @@
 const { Router } = require('express');
 
+const CountryController = require('./app/controllers/CountryController');
 const AdvertiserController = require('./app/controllers/AdvertiserController');
 const PublisherController = require('./app/controllers/PublisherController');
 
 const router = Router();
+
+router.get('/countries', CountryController.index);
 
 router.post('/advertisers', AdvertiserController.store);
 router.get('/advertisers/filter', AdvertiserController.filter);

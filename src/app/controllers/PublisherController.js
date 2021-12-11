@@ -1,5 +1,5 @@
 const PublishersRepository = require('../repositories/PublishersRepository');
-const CountryRepository = require('../repositories/CountryRepository');
+const CountriesRepository = require('../repositories/CountriesRepository');
 
 class PublisherController {
   async store(request, response) {
@@ -13,7 +13,7 @@ class PublisherController {
       return response.status(400).json({ error: 'country_id is required' });
     }
 
-    const countryIdExist = await CountryRepository.findById(country_id);
+    const countryIdExist = await CountriesRepository.findById(country_id);
 
     if (!countryIdExist) {
       return response.status(404).json({ error: 'country_id not found' });
