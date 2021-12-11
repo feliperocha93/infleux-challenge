@@ -6,19 +6,21 @@ class SchemaValidator {
    * @returns {[String]}
    */
   validateAndGetErrors(Model, payload) {
-    const errors = this.validate(Model, payload);
+    const error = this.validate(Model, payload);
 
-    return this.getErrors(errors);
+    return error?.errors ? this.getErrors(error.errors) : [];
   }
 
   validate(Model, payload) {
-    const { errors } = new Model(payload).validateSync();
+    const error = new Model(payload).validateSync();
 
-    return errors;
+    return error;
   }
 
   getErrors(errors) {
-    return Object.keys(errors).map((error) => errors[error].message);
+    return Object.keys(errors).map(
+      (error) => errors[error].properties?.message || errors,
+    );
   }
 }
 

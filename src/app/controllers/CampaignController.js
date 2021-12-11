@@ -7,7 +7,7 @@ class CampaignController {
     const errors = SchemaValidator.validateAndGetErrors(Campaign, request.body);
 
     if (errors.length > 0) {
-      return response.status(400).json(errors);
+      return response.status(400).json({ errors });
     }
 
     const campaign = await CampaignsRepository.create(request.body);

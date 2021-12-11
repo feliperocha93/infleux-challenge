@@ -3,27 +3,35 @@ const mongoose = require('../../database');
 const CampaignSchema = new mongoose.Schema({
   name: {
     type: String,
-    required: [true, 'name is required'],
+    required: [true, ({ path }) => `${path} is required`],
   },
   advertiser_id: {
-    type: mongoose.SchemaTypes.ObjectId,
-    required: [true, 'advertiser_id is required'],
+    type: String,
+    validate: {
+      validator: (s) => mongoose.isValidObjectId(s),
+      message: ({ path }) => `${path} is invalid`,
+    },
+    required: [true, ({ path }) => `${path} is required`],
   },
   campaign_type: {
     type: String,
-    enum: ['CPM', 'CPC', 'CPI'],
-    required: [true, 'campaign_type is required'],
-
+    enum: {
+      values: ['CPM', 'CPC', 'CPI'],
+      message: 'campaign_type is invalid',
+    },
+    required: [true, ({ path }) => `${path} is required`],
   },
   countries_id: {
-    type: [mongoose.SchemaTypes.ObjectId],
-    required: [true, 'countries_id is required'],
-
+    type: Array,
+    validate: {
+      validator: (a) => a.length > 0 && a.every((i) => mongoose.isValidObjectId(i)),
+      message: ({ path }) => `${path} is invalid`,
+    },
+    required: [true, ({ path }) => `${path} is required`],
   },
   bid: {
     type: mongoose.Decimal128,
-    required: [true, 'bid is required'],
-
+    required: [true, ({ path }) => `${path} is required`],
   },
   publishers: {
     type: [
