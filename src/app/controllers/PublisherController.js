@@ -49,6 +49,18 @@ class PublisherController {
 
     return response.json(publisher);
   }
+
+  async delete(request, response) {
+    const { id } = request.params;
+
+    const publisher = await PublishersRepository.remove(id);
+
+    if (!publisher) {
+      return response.status(404).json({ error: 'publisher not found' });
+    }
+
+    return response.status(204).send();
+  }
 }
 
 module.exports = new PublisherController();

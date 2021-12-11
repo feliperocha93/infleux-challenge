@@ -17,4 +17,6 @@ router.get('/publishers/filter', PublisherController.filter);
 router.get('/publishers/:id', PublisherController.show);
 router.get('/publishers', PublisherController.index);
 
+router.delete('/publishers/:id', PublisherController.delete);
+
 module.exports = router;

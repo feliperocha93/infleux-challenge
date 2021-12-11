@@ -24,6 +24,12 @@ class PublishersRepository {
 
     return publisher;
   }
+
+  async remove(id) {
+    const publisher = await Publisher.findByIdAndRemove(id);
+
+    return publisher;
+  }
 }
 
 module.exports = new PublishersRepository();

@@ -11,6 +11,8 @@ const testData = {
   country_id: '61afdbb887143b4029d7a6b3',
 };
 
+const randomId = '61b3ec4225c8549f886d1af8';
+
 function cleanDb() {
   Publisher.deleteMany({}, {}, () => null);
 }
@@ -98,7 +100,6 @@ describe('when to store a publisher', () => {
 
 describe('when to find a publisher', () => {
   const localName = 'Find Test';
-  const randomId = '61b3ec4225c8549f886d1af8';
   let findTestId;
 
   beforeAll(async () => {
@@ -150,4 +151,85 @@ describe('when to find a publisher', () => {
 
   // TODO: After campaign controller is done
   test.todo('should return publisher by campaign_id');
+});
+
+describe.skip('when to update a publisher', () => {
+  const localName = 'Update Test';
+  let updateTestId;
+
+  beforeAll(async () => {
+    cleanDb();
+    const { _id } = await Publisher.create({ ...testData, name: localName });
+    updateTestId = _id;
+    Publisher.create(testData);
+  });
+
+  test.each(
+    [false, null, undefined, 0, NaN, ''],
+  )('should not update a publisher without name', async (newName) => {
+    const { body, status } = await request(server)
+      .put(`${MAIN_ROUTE}/${updateTestId}`)
+      .send({
+        name: newName,
+      });
+
+    expect(status).toBe(400);
+    expect(body.error).toBe('name is required');
+
+    const documentNotUpdated = await Publisher.findById(updateTestId);
+
+    expect(documentNotUpdated.name).toBe(localName);
+  });
+
+  test('should update publisher', async () => {
+    const { body, status } = await request(server)
+      .put(`${MAIN_ROUTE}/${updateTestId}`)
+      .send({
+        name: testData.name,
+      });
+
+    expect(status).toBe(200);
+    expect(body.name).toBe(testData.name);
+
+    const documentUpdated = await Publisher.findById(updateTestId);
+
+    expect(documentUpdated.name).toBe(testData.name);
+  });
+
+  // TODO: After campaign controller is done
+  test.todo('should update campaigns_ids');
+  test.todo('should not update if campaigns_ids are invalid');
+});
+
+describe('when to delete a publisher', () => {
+  const localName = 'Delete Test';
+  let deleteTestId;
+
+  beforeAll(async () => {
+    cleanDb();
+    const { _id } = await Publisher.create({ ...testData, name: localName });
+    deleteTestId = _id;
+    Publisher.create(testData);
+  });
+
+  test('should delete publisher', async () => {
+    const { status } = await request(server)
+      .delete(`${MAIN_ROUTE}/${deleteTestId}`);
+
+    expect(status).toBe(204);
+
+    const deletedPublisher = await Publisher.findById(deleteTestId);
+
+    expect(deletedPublisher).toBeNull();
+  });
+
+  test('should return a not found error if publisher not exist', async () => {
+    const { body, status } = await request(server).delete(`${MAIN_ROUTE}/${randomId}`);
+
+    expect(status).toBe(404);
+    expect(body.error).toBe('publisher not found');
+  });
+
+  // TODO: After campaign controller is done
+  test.todo('should return a error if publisher has campaign_ids is not empty');
 });
