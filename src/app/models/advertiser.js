@@ -1,5 +1,7 @@
 const mongoose = require('../../database');
 
+// TODO: Change require to required;
+
 const AdvertiserSchema = new mongoose.Schema({
   name: {
     type: String,

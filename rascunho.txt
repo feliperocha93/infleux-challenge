@@ -25,7 +25,7 @@ campaigns_id []
 camapign:
 id
 name
-brand_id
+advertiser_id
 type (Enum)
 countries_id []
 bid (decimal)

@@ -4,6 +4,7 @@
 * [x] Create advertiser controller
 * [x] Create publisher controller
 * [] Create campaign controller (fetch)
+* [] Refactor validaton
 * [] Create Thunder Client file
 * [x] Create READ.ME
 * --------------------------------------

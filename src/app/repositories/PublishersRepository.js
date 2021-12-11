@@ -1,4 +1,4 @@
-const Publisher = require('../models/publisher');
+const Publisher = require('../models/Publisher');
 
 class PublishersRepository {
   async create(payload) {
