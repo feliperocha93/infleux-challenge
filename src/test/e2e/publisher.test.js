@@ -1,16 +1,18 @@
 const request = require('supertest');
-const mongoose = require('mongoose');
+const mongoose = require('../../database');
 const Publisher = require('../../app/models/publisher');
 
 const server = require('../../index');
 
 const MAIN_ROUTE = '/publishers';
 
+// TODO: country_id must be taked in DB
 const testData = {
   name: 'Publisher Name',
   country_id: '61afdbb887143b4029d7a6b3',
 };
 
+// TODO: Try make it automatic
 const randomId = '61b3ec4225c8549f886d1af8';
 
 function cleanDb() {
@@ -96,6 +98,9 @@ describe('when to store a publisher', () => {
     expect(status).toBe(201);
     expect(body.campaigns_id.length).toBe(0);
   });
+
+  // TODO: Check country_id type
+  test.todo('should not create if country_id is invalid');
 });
 
 describe('when to find a publisher', () => {
@@ -153,7 +158,7 @@ describe('when to find a publisher', () => {
   test.todo('should return publisher by campaign_id');
 });
 
-describe.skip('when to update a publisher', () => {
+describe('when to update a publisher', () => {
   const localName = 'Update Test';
   let updateTestId;
 
@@ -164,9 +169,18 @@ describe.skip('when to update a publisher', () => {
     Publisher.create(testData);
   });
 
+  test('should not update if payload is empty', async () => {
+    const { body, status } = await request(server)
+      .put(`${MAIN_ROUTE}/${updateTestId}`)
+      .send({});
+
+    expect(status).toBe(400);
+    expect(body.error).toBe('payload can not be empty');
+  });
+
   test.each(
-    [false, null, undefined, 0, NaN, ''],
-  )('should not update a publisher without name', async (newName) => {
+    [false, null, 0, NaN, ''],
+  )('should not update if name is invalid', async (newName) => {
     const { body, status } = await request(server)
       .put(`${MAIN_ROUTE}/${updateTestId}`)
       .send({
@@ -174,31 +188,77 @@ describe.skip('when to update a publisher', () => {
       });
 
     expect(status).toBe(400);
-    expect(body.error).toBe('name is required');
+    expect(body.error).toBe('name is invalid');
 
     const documentNotUpdated = await Publisher.findById(updateTestId);
 
     expect(documentNotUpdated.name).toBe(localName);
   });
 
-  test('should update publisher', async () => {
+  test.each(
+    [false, null, 0, NaN, '', 12365487897, 'Olá mundo', 'sad4as5646sad4as5646'],
+  )('should not update if country_id is invalid', async (country_id) => {
     const { body, status } = await request(server)
       .put(`${MAIN_ROUTE}/${updateTestId}`)
       .send({
-        name: testData.name,
+        country_id,
+      });
+
+    expect(status).toBe(400);
+    expect(body.error).toBe('country_id is invalid');
+
+    const documentNotUpdated = await Publisher.findById(updateTestId);
+
+    expect(documentNotUpdated.country_id.toString()).toBe(testData.country_id);
+  });
+
+  test.todo('should not update if campaigns_ids is invalid');
+
+  test('should return a not found error if publisher not exist', async () => {
+    const id = mongoose.Types.ObjectId();
+
+    const { body, status } = await request(server)
+      .put(`${MAIN_ROUTE}/${id}`)
+      .send({ name: localName });
+
+    expect(status).toBe(404);
+    expect(body.error).toBe('publisher not found');
+  });
+
+  test('should return a not found error if country_id not exist', async () => {
+    const id = mongoose.Types.ObjectId();
+
+    const { body, status } = await request(server)
+      .put(`${MAIN_ROUTE}/${updateTestId}`)
+      .send({ country_id: id });
+
+    expect(status).toBe(404);
+    expect(body.error).toBe('country_id not found');
+  });
+
+  // TODO: After campaign controller is done
+  test.todo('should return a not found error if campaigns_ids not exist');
+
+  test.skip.each([
+    ['name', testData.name],
+    ['country_id', '61afdbb887143b4029d7a6b4'],
+  ])('should update publisher %s to %s', async (field, value) => {
+    const { body, status } = await request(server)
+      .put(`${MAIN_ROUTE}/${updateTestId}`)
+      .send({
+        [field]: value,
       });
 
     expect(status).toBe(200);
-    expect(body.name).toBe(testData.name);
+    expect(body[field]).toBe(value);
 
     const documentUpdated = await Publisher.findById(updateTestId);
 
-    expect(documentUpdated.name).toBe(testData.name);
+    expect(documentUpdated[field]).toBe(value);
   });
 
   // TODO: After campaign controller is done
   test.todo('should update campaigns_ids');
-  test.todo('should not update if campaigns_ids are invalid');
 });
 
 describe('when to delete a publisher', () => {

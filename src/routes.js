@@ -19,7 +19,7 @@ router.post('/publishers', PublisherController.store);
 router.get('/publishers/filter', PublisherController.filter);
 router.get('/publishers/:id', PublisherController.show);
 router.get('/publishers', PublisherController.index);
-
+router.put('/publishers/:id', PublisherController.update);
 router.delete('/publishers/:id', PublisherController.delete);
 
 module.exports = router;

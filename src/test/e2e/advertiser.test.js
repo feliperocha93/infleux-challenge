@@ -130,6 +130,7 @@ describe('when to update a advertiser', () => {
     Advertiser.create({ name: testData.name });
   });
 
+  // TODO: Should not update if name is invalid
   test.each(
     [false, null, undefined, 0, NaN, ''],
   )('should not update a advertiser without name', async (newName) => {

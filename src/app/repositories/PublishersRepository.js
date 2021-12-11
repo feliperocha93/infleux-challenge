@@ -25,6 +25,12 @@ class PublishersRepository {
     return publisher;
   }
 
+  async update(id, payload) {
+    const publisher = await Publisher.findByIdAndUpdate(id, payload, { new: true });
+
+    return publisher;
+  }
+
   async remove(id) {
     const publisher = await Publisher.findByIdAndRemove(id);
 
