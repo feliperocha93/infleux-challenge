@@ -1,5 +1,3 @@
-/* eslint-disable no-restricted-syntax */
-/* eslint-disable no-await-in-loop */
 const mongoose = require('../../database');
 const AdvertisersRepository = require('../repositories/AdvertisersRepository');
 const CountriesRepository = require('../repositories/CountriesRepository');

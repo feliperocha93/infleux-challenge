@@ -15,6 +15,10 @@ router.put('/advertisers/:id', AdvertiserController.update);
 router.delete('/advertisers/:id', AdvertiserController.delete);
 
 router.post('/campaigns', CampaignController.store);
+router.get('/campaigns/fetch', CampaignController.fetch);
+router.get('/campaigns/filter', CampaignController.filter);
+router.get('/campaigns/:id', CampaignController.show);
+router.get('/campaigns', CampaignController.index);
 
 router.get('/countries', CountryController.index);
 

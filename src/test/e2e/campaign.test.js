@@ -14,8 +14,8 @@ const MAIN_ROUTE = '/campaigns';
 const testData = {
   name: 'Nova Campanha',
   campaign_type: 'CPC',
-  bid: '35.00',
-  advertiser_id: '61b4bf3bdbded9ee9c8c46db',
+  bid: '1.00',
+  advertiser_id: '',
   countries_id: [],
 };
 
@@ -33,6 +33,7 @@ const randomId = mongoose.Types.ObjectId();
 function cleanDb() {
   Advertiser.deleteMany({}, {}, () => null);
   Campaign.deleteMany({}, {}, () => null);
+  Country.deleteMany({}, {}, () => null);
   Publisher.deleteMany({}, {}, () => null);
 }
 
@@ -141,23 +142,92 @@ describe('when to store a campaign', () => {
   });
 });
 
-describe.only('when to find campaogn', () => {
-  test.todo('should return all campaigns');
-  test.todo('should return campaign by id');
-  test.todo('should return a not found error if id not exist');
-  test.todo('should return the bests campaigns for the publisher');
+describe('when to find campaign', () => {
+  let campaignId;
 
-  test.skip.each([
-    [localName, undefined, 1],
-    [testData.name, undefined, 1],
-    [undefined, testData.country_id, 2],
-    [undefined, randomId, 0],
-  ])('when filter by %s and %s should return %i publishers by filters', async (name, country_id, lentgh) => {
+  beforeAll(async () => {
+    cleanDb();
+    const { _id } = await Advertiser.create(advertiserData);
+    testData.advertiser_id = _id.toString();
+
+    const country = await Country.create({ name: 'China' });
+    testData.countries_id.push(country._id.toString());
+
+    await Campaign.create({ ...testData });
+    await Campaign.create({ ...testData, bid: 1 });
+    await Campaign.create({ ...testData, bid: 20 });
+    await Campaign.create({ ...testData, bid: 30 });
+    const campaign = await Campaign.create({ ...testData, bid: 999 });
+    campaignId = campaign._id;
+  });
+
+  test('should return all campaigns', async () => {
+    const { body, status } = await request(server)
+      .get(MAIN_ROUTE);
+
+    expect(status).toBe(200);
+    expect(body.length).toBe(5);
+  });
+
+  test('should return campaign by id', async () => {
+    const { body, status } = await request(server)
+      .get(`${MAIN_ROUTE}/${campaignId}`);
+
+    expect(status).toBe(200);
+    expect(body.name).toBe(testData.name);
+  });
+
+  test('should return a not found error if id not exist', async () => {
+    const { body, status } = await request(server)
+      .get(`${MAIN_ROUTE}/${testData.advertiser_id}`);
+
+    expect(status).toBe(404);
+    expect(body.error).toBe('campaign not found');
+  });
+
+  test('should return the bests campaigns for the publisher', async () => {
+    const { body, status } = await request(server)
+      .get(`${MAIN_ROUTE}/fetch`)
+      .query({ country_id: testData.countries_id[0] });
+
+    expect(status).toBe(200);
+    expect(body.length).toBe(3);
+    expect(body[0].bid).toBe(999);
+    expect(body[1].bid).toBe(30);
+    expect(body[2].bid).toBe(20);
+  });
+
+  test.each([
+    ['bid', 999, 1],
+    ['bid', 1.00, 2],
+    ['name', testData.name, 5],
+    ['name', 'Say my name', 0],
+    ['advertiser_id', '123654789', 0],
+    ['publishers', [], 5],
+  ])('when filter by %s equal %s, should return %i campaigns', async (field, value, lentgh) => {
     const { body, status } = await request(server)
       .get(`${MAIN_ROUTE}/filter`)
-      .query({ name, country_id });
+      .query({ [field]: value });
 
     expect(status).toBe(200);
     expect(body.length).toBe(lentgh);
+  });
+
+  test('when filter by advertiser_id, should return 5 campaigns', async () => {
+    const { body, status } = await request(server)
+      .get(`${MAIN_ROUTE}/filter`)
+      .query({ advertiser_id: testData.advertiser_id });
+
+    expect(status).toBe(200);
+    expect(body.length).toBe(5);
+  });
+
+  test('when filter by countries_id, should return 5 campaigns', async () => {
+    const { body, status } = await request(server)
+      .get(`${MAIN_ROUTE}/filter`)
+      .query({ countries_id: [testData.countries_id[0]] });
+
+    expect(status).toBe(200);
+    expect(body.length).toBe(5);
   });
 });

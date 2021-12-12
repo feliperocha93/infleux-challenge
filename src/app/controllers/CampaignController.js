@@ -17,6 +17,40 @@ class CampaignController {
       return response.status(status).json({ message });
     }
   }
+
+  async fetch(request, response) {
+    const { country_id } = request.query;
+
+    const campaigns = await CampaignsRepository.fetch(country_id);
+
+    return response.json(campaigns);
+  }
+
+  async index(request, response) {
+    const campaigns = await CampaignsRepository.findAll();
+
+    return response.json(campaigns);
+  }
+
+  async show(request, response) {
+    const { id } = request.params;
+
+    const campaign = await CampaignsRepository.findById(id);
+
+    if (!campaign) {
+      return response.status(404).json({ error: 'campaign not found' });
+    }
+
+    return response.json(campaign);
+  }
+
+  async filter(request, response) {
+    const filter = { ...request.query };
+
+    const campaign = await CampaignsRepository.findByFilter(filter);
+
+    return response.json(campaign);
+  }
 }
 
 module.exports = new CampaignController();

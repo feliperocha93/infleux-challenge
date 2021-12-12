@@ -13,6 +13,8 @@ module.exports = {
   rules: {
     'class-methods-use-this': 'off',
     camelcase: 'off',
+    'no-restricted-syntax': 'off',
+    'no-await-in-loop': 'off',
   },
   overrides: [
     {
@@ -23,5 +25,4 @@ module.exports = {
       },
     },
   ],
-
 };
