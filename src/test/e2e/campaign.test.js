@@ -220,3 +220,52 @@ describe('when to find campaign', () => {
     expect(body.length).toBe(5);
   });
 });
+
+describe('when to update campaign', () => {
+  describe.each([
+    ['campaign_type', ['CCPC', 215]],
+    ['bid', [-500, 0]],
+    ['advertiser_id', ['s3a1s65a4s', 12564654]],
+    ['countries_id', [['32156465', 1654654654], '55465465456']],
+  ])('should return a bad request error if field is invalid', (field, values) => {
+    test.each(values)('', async (value) => {
+      const { body, status } = await request(server)
+        .put(`${MAIN_ROUTE}/${campaignId}`)
+        .send({
+          [field]: value,
+        });
+
+      expect(status).toBe(400);
+      expect(body.errors[0]).toBe(`${field} is invalid`);
+    });
+  });
+
+  test.each(
+    ['name', 'campaign_type', 'bid', 'advertiser_id'],
+  )('should not create a campaign without %s', async (field) => {
+    const { body, status } = await request(server)
+      .put(`${MAIN_ROUTE}/${campaignId}`)
+      .send({ ...testData, [field]: null });
+
+    expect(status).toBe(400);
+    expect(body.errors[0]).toBe(`${field} is required`);
+  });
+
+  test('should return a not found error if id not exist', async () => {
+    const { body, status } = await request(server)
+      .put(`${MAIN_ROUTE}/${randomId}`)
+      .send({ name: 'Updated name' });
+
+    expect(status).toBe(404);
+    expect(body.error).toBe('campaign not found');
+  });
+
+  test('should update campaign', async () => {
+    const { body, status } = await request(server)
+      .put(`${MAIN_ROUTE}/${campaignId}`)
+      .send({ name: 'Updated name' });
+
+    expect(status).toBe(200);
+    expect(body.name).toBe('Updated name');
+  });
+});

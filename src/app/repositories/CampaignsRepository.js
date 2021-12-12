@@ -32,6 +32,12 @@ class CampaignsRepository {
 
     return campaign;
   }
+
+  async update(id, payload) {
+    const campaign = await Campaign.findByIdAndUpdate(id, payload, { new: true });
+
+    return campaign;
+  }
 }
 
 module.exports = new CampaignsRepository();
