@@ -29,6 +29,7 @@ const advertiserData = {
 // };
 
 const randomId = mongoose.Types.ObjectId();
+let campaignId;
 
 function cleanDb() {
   Advertiser.deleteMany({}, {}, () => null);
@@ -55,20 +56,26 @@ async function invalidTestTemplate(field, value) {
   expect(body.errors[0]).toBe(`${field} is invalid`);
 }
 
+beforeAll(async () => {
+  cleanDb();
+
+  const { _id } = await Advertiser.create(advertiserData);
+  testData.advertiser_id = _id.toString();
+
+  const country = await Country.create({ name: 'China' });
+  testData.countries_id.push(country._id.toString());
+
+  await Campaign.create({ ...testData, bid: 20 });
+  await Campaign.create({ ...testData, bid: 30 });
+  const campaign = await Campaign.create({ ...testData, bid: 999 });
+  campaignId = campaign._id;
+});
+
 afterAll(() => {
   server.close();
 });
 
 describe('when to store a campaign', () => {
-  beforeAll(async () => {
-    cleanDb();
-    const { _id } = await Advertiser.create(advertiserData);
-    testData.advertiser_id = _id.toString();
-
-    const country_id = await Country.create({ name: 'China' });
-    testData.countries_id.push(country_id);
-  });
-
   test('should create a campaign', async () => {
     const { body, status } = await request(server)
       .post(MAIN_ROUTE)
@@ -143,24 +150,6 @@ describe('when to store a campaign', () => {
 });
 
 describe('when to find campaign', () => {
-  let campaignId;
-
-  beforeAll(async () => {
-    cleanDb();
-    const { _id } = await Advertiser.create(advertiserData);
-    testData.advertiser_id = _id.toString();
-
-    const country = await Country.create({ name: 'China' });
-    testData.countries_id.push(country._id.toString());
-
-    await Campaign.create({ ...testData });
-    await Campaign.create({ ...testData, bid: 1 });
-    await Campaign.create({ ...testData, bid: 20 });
-    await Campaign.create({ ...testData, bid: 30 });
-    const campaign = await Campaign.create({ ...testData, bid: 999 });
-    campaignId = campaign._id;
-  });
-
   test('should return all campaigns', async () => {
     const { body, status } = await request(server)
       .get(MAIN_ROUTE);
