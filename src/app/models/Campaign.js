@@ -1,4 +1,10 @@
+/* eslint-disable no-restricted-syntax */
+/* eslint-disable no-await-in-loop */
 const mongoose = require('../../database');
+const AdvertisersRepository = require('../repositories/AdvertisersRepository');
+const CountriesRepository = require('../repositories/CountriesRepository');
+
+const NotFoundError = require('../errors/NotFoundError');
 
 const CampaignSchema = new mongoose.Schema({
   name: {
@@ -30,7 +36,11 @@ const CampaignSchema = new mongoose.Schema({
     required: [true, ({ path }) => `${path} is required`],
   },
   bid: {
-    type: mongoose.Decimal128,
+    type: Number,
+    validate: {
+      validator: (a) => a > 0 && typeof a === 'number',
+      message: ({ path }) => `${path} is invalid`,
+    },
     required: [true, ({ path }) => `${path} is required`],
   },
   publishers: {
@@ -42,6 +52,39 @@ const CampaignSchema = new mongoose.Schema({
     ],
     default: [],
   },
+});
+
+CampaignSchema.pre('save', function cleanPublishers(next) {
+  this.publishers = [];
+  next();
+});
+
+CampaignSchema.pre('save', async function checkAdvertiser(next) {
+  const advertiserExist = await AdvertisersRepository.findById(this.advertiser_id);
+
+  if (!advertiserExist) {
+    throw new NotFoundError('advertiser_id not found');
+  }
+
+  next();
+});
+
+CampaignSchema.pre('save', async function checkAdvertiser(next) {
+  const errors = [];
+
+  for (const country_id of this.countries_id) {
+    const idExist = await CountriesRepository.findById(country_id);
+
+    if (!idExist) {
+      errors.push(country_id);
+    }
+  }
+
+  if (errors.length > 0) {
+    throw new NotFoundError(`countries_id [${errors}] not found`);
+  }
+
+  next();
 });
 
 const Campaign = mongoose.model('Campaign', CampaignSchema);

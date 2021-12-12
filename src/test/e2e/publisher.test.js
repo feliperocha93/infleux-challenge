@@ -1,6 +1,6 @@
 const request = require('supertest');
 const mongoose = require('../../database');
-const Publisher = require('../../app/models/publisher');
+const Publisher = require('../../app/models/Publisher');
 
 const server = require('../../index');
 

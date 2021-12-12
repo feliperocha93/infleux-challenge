@@ -10,9 +10,12 @@ class CampaignController {
       return response.status(400).json({ errors });
     }
 
-    const campaign = await CampaignsRepository.create(request.body);
-
-    return response.status(201).json(campaign);
+    try {
+      const campaign = await CampaignsRepository.create(request.body);
+      return response.status(201).json(campaign);
+    } catch ({ message, status }) {
+      return response.status(status).json({ message });
+    }
   }
 }
 
