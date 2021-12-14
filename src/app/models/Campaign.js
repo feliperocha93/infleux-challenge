@@ -67,7 +67,7 @@ CampaignSchema.pre('save', async function checkAdvertiser(next) {
   next();
 });
 
-CampaignSchema.pre('save', async function checkAdvertiser(next) {
+CampaignSchema.pre('save', async function checkCountries(next) {
   const errors = [];
 
   for (const country_id of this.countries_id) {

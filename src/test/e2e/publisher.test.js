@@ -256,9 +256,6 @@ describe('when to update a publisher', () => {
 
     expect(documentUpdated[field]).toBe(value);
   });
-
-  // TODO: After campaign controller is done
-  test.todo('should update campaigns_ids');
 });
 
 describe('when to delete a publisher', () => {
@@ -289,7 +286,4 @@ describe('when to delete a publisher', () => {
     expect(status).toBe(404);
     expect(body.error).toBe('publisher not found');
   });
-
-  // TODO: After campaign controller is done
-  // Quando apagar um publisher, devo editar publishers_id da campanha
 });

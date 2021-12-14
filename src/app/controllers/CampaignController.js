@@ -3,6 +3,8 @@ const CampaignsRepository = require('../repositories/CampaignsRepository');
 const Campaign = require('../models/Campaign');
 const SchemaValidator = require('../utils/SchemaValidator');
 
+const AdvertiserService = require('../services/AdvertiserService');
+
 class CampaignController {
   async store(request, response) {
     const errors = SchemaValidator.validateAndGetErrors(Campaign, request.body);
@@ -13,6 +15,7 @@ class CampaignController {
 
     try {
       const campaign = await CampaignsRepository.create(request.body);
+      await AdvertiserService.setCampaign(request.body.advertiser_id, campaign._id.toString());
       return response.status(201).json(campaign);
     } catch ({ message, status }) {
       return response.status(status).json({ message });
@@ -86,6 +89,8 @@ class CampaignController {
     if (!campaign) {
       return response.status(404).json({ error: 'campaign not found' });
     }
+
+    await AdvertiserService.removeCampaign(campaign.advertiser_id.toString(), id);
 
     return response.status(204).send();
   }

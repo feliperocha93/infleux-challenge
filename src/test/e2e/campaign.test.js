@@ -10,7 +10,6 @@ const server = require('../../index');
 
 const MAIN_ROUTE = '/campaigns';
 
-// TODO: get ids in database
 const testData = {
   name: 'Nova Campanha',
   campaign_type: 'CPC',
@@ -148,8 +147,17 @@ describe('when to store a campaign', () => {
     expect(body.message).toBe(`countries_id [${randomId},${randomId}] not found`);
   });
 
-  // TODO:
-  test.todo('Quando criar uma campanha, deve atualizar no dono');
+  test('when to create a campaign, should update campign_ids in advertiser', async () => {
+    const { body, status } = await request(server)
+      .post(MAIN_ROUTE)
+      .send(testData);
+
+    expect(status).toBe(201);
+
+    const advertiser = await Advertiser.findById(testData.advertiser_id);
+
+    expect(advertiser.campaigns_id.includes(body._id.toString())).toBeTruthy();
+  });
 });
 
 describe('when to find campaign', () => {
@@ -292,7 +300,17 @@ describe.only('when to delete a campaign', () => {
     expect(body.error).toBe('campaign not found');
   });
 
-  test.todo('should remove campaign_id in publishers');
-});
+  test.only('when to remove a campaign, should update campign_ids in advertiser', async () => {
+    const { body } = await request(server)
+      .post(MAIN_ROUTE)
+      .send(testData);
 
-// TODO: Criar a controller add publisher/ remove publisher
+    const campaign_id = body._id.toString();
+
+    await request(server).delete(`${MAIN_ROUTE}/${campaign_id}`);
+
+    const advertiser = await Advertiser.findById(testData.advertiser_id);
+
+    expect(advertiser.campaigns_id.includes(campaign_id)).toBeFalsy();
+  });
+});

@@ -130,7 +130,6 @@ describe('when to update a advertiser', () => {
     Advertiser.create({ name: testData.name });
   });
 
-  // TODO: Should not update if name is invalid
   test.each(
     [false, null, undefined, 0, NaN, ''],
   )('should not update a advertiser without name', async (newName) => {
@@ -162,10 +161,6 @@ describe('when to update a advertiser', () => {
 
     expect(documentUpdated.name).toBe(testData.name);
   });
-
-  // TODO: After campaign controller is done
-  test.todo('should update campaigns_ids');
-  test.todo('should not update if campaigns_ids are invalid');
 });
 
 describe('when to delete a advertiser', () => {
@@ -198,7 +193,4 @@ describe('when to delete a advertiser', () => {
     expect(status).toBe(404);
     expect(body.error).toBe('advertiser not found');
   });
-
-  // TODO: After campaign controller is done
-  // Quando apagar uma marca, devo apagar todas as campanhas
 });
