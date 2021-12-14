@@ -14,12 +14,15 @@ router.get('/advertisers', AdvertiserController.index);
 router.put('/advertisers/:id', AdvertiserController.update);
 router.delete('/advertisers/:id', AdvertiserController.delete);
 
+router.post('/campaigns/:id/publishers', CampaignController.updatePublishers);
 router.post('/campaigns', CampaignController.store);
 router.get('/campaigns/fetch', CampaignController.fetch);
 router.get('/campaigns/filter', CampaignController.filter);
 router.get('/campaigns/:id', CampaignController.show);
 router.get('/campaigns', CampaignController.index);
+router.put('/campaigns/:id/publishers', CampaignController.updatePublishers);
 router.put('/campaigns/:id', CampaignController.update);
+router.delete('/campaigns/:id/publishers', CampaignController.updatePublishers);
 router.delete('/campaigns/:id', CampaignController.delete);
 
 router.get('/countries', CountryController.index);

@@ -22,13 +22,14 @@ const advertiserData = {
   name: 'Advertiser Name',
 };
 
-// const publisherData = {
-//   name: 'Publisher Name',
-//   country_id: '61afdbb887143b4029d7a6b3',
-// };
+const publisherData = {
+  name: 'Publisher Name',
+  country_id: '',
+};
 
 const randomId = mongoose.Types.ObjectId();
 let campaignId;
+let publisherId;
 
 function cleanDb() {
   Advertiser.deleteMany({}, {}, () => null);
@@ -63,6 +64,10 @@ beforeAll(async () => {
 
   const country = await Country.create({ name: 'China' });
   testData.countries_id.push(country._id.toString());
+  publisherData.country_id = country._id.toString();
+
+  const publisher = await Publisher.create(publisherData);
+  publisherId = publisher._id.toString();
 
   await Campaign.create({ ...testData, bid: 20 });
   await Campaign.create({ ...testData, bid: 30 });
@@ -166,7 +171,7 @@ describe('when to find campaign', () => {
       .get(MAIN_ROUTE);
 
     expect(status).toBe(200);
-    expect(body.length).toBe(5);
+    expect(body.length).toBe(6);
   });
 
   test('should return campaign by id', async () => {
@@ -199,11 +204,11 @@ describe('when to find campaign', () => {
 
   test.each([
     ['bid', 999, 1],
-    ['bid', 1.00, 2],
-    ['name', testData.name, 5],
+    ['bid', 1.00, 3],
+    ['name', testData.name, 6],
     ['name', 'Say my name', 0],
-    ['advertiser_id', '123654789', 0],
-    ['publishers', [], 5],
+    ['advertiser_id', '123664789', 0],
+    ['publishers', [], 6],
   ])('when filter by %s equal %s, should return %i campaigns', async (field, value, lentgh) => {
     const { body, status } = await request(server)
       .get(`${MAIN_ROUTE}/filter`)
@@ -213,22 +218,22 @@ describe('when to find campaign', () => {
     expect(body.length).toBe(lentgh);
   });
 
-  test('when filter by advertiser_id, should return 5 campaigns', async () => {
+  test('when filter by advertiser_id, should return 6 campaigns', async () => {
     const { body, status } = await request(server)
       .get(`${MAIN_ROUTE}/filter`)
       .query({ advertiser_id: testData.advertiser_id });
 
     expect(status).toBe(200);
-    expect(body.length).toBe(5);
+    expect(body.length).toBe(6);
   });
 
-  test('when filter by countries_id, should return 5 campaigns', async () => {
+  test('when filter by countries_id, should return 6 campaigns', async () => {
     const { body, status } = await request(server)
       .get(`${MAIN_ROUTE}/filter`)
       .query({ countries_id: [testData.countries_id[0]] });
 
     expect(status).toBe(200);
-    expect(body.length).toBe(5);
+    expect(body.length).toBe(6);
   });
 });
 
@@ -236,7 +241,6 @@ describe('when to update campaign', () => {
   describe.each([
     ['campaign_type', ['CCPC', 215]],
     ['bid', [-500, 0]],
-    ['advertiser_id', ['s3a1s65a4s', 12564654]],
     ['countries_id', [['32156465', 1654654654], '55465465456']],
   ])('should return a bad request error if field is invalid', (field, values) => {
     test.each(values)('', async (value) => {
@@ -252,11 +256,11 @@ describe('when to update campaign', () => {
   });
 
   test.each(
-    ['name', 'campaign_type', 'bid', 'advertiser_id'],
-  )('should not create a campaign without %s', async (field) => {
+    ['name', 'campaign_type', 'bid'],
+  )('should not update a campaign with null %s', async (field) => {
     const { body, status } = await request(server)
       .put(`${MAIN_ROUTE}/${campaignId}`)
-      .send({ ...testData, [field]: null });
+      .send({ ...testData, [field]: null, advertiser_id: undefined });
 
     expect(status).toBe(400);
     expect(body.errors[0]).toBe(`${field} is required`);
@@ -279,9 +283,188 @@ describe('when to update campaign', () => {
     expect(status).toBe(200);
     expect(body.name).toBe('Updated name');
   });
+
+  test('shoud return a error when try update advertiser_id', async () => {
+    const advertiser = await Advertiser.create({ name: 'My Advertiser' });
+
+    const { body, status } = await request(server)
+      .put(`${MAIN_ROUTE}/${campaignId}`)
+      .send({ advertiser_id: advertiser._id.toString() });
+
+    expect(status).toBe(400);
+    expect(body.error).toBe('advertiser_id can not be updated');
+  });
+
+  test('shoud return a error when try update publishers list', async () => {
+    const { body, status } = await request(server)
+      .put(`${MAIN_ROUTE}/${campaignId}`)
+      .send({ publishers: { publisher_id: publisherId, publisher_result: 777 } });
+
+    expect(status).toBe(400);
+    expect(body.error).toBe('publishers can not be updated');
+  });
 });
 
-describe.only('when to delete a campaign', () => {
+describe('when to set a publisher', () => {
+  test('should set a publisher', async () => {
+    const { status } = await request(server)
+      .post(`${MAIN_ROUTE}/${campaignId}/publishers`)
+      .send({ publisher_id: publisherId });
+
+    expect(status).toBe(200);
+
+    const campaign = await Campaign.findById(campaignId);
+    const publishersId = campaign.publishers.map((pub) => pub.publisher_id.toString());
+
+    expect(publishersId.includes(publisherId)).toBeTruthy();
+  });
+
+  test('should return a not found error if publisher not exist', async () => {
+    const { body, status } = await request(server)
+      .post(`${MAIN_ROUTE}/${campaignId}/publishers`)
+      .send({ publisher_id: campaignId });
+
+    expect(status).toBe(404);
+    expect(body.error).toBe('publisher not found');
+  });
+
+  test('should return a not found error if campaign not exist', async () => {
+    const { body, status } = await request(server)
+      .post(`${MAIN_ROUTE}/${publisherId}/publishers`)
+      .send({ publisher_id: publisherId });
+
+    expect(status).toBe(404);
+    expect(body.error).toBe('campaign not found');
+  });
+
+  test('should return a bad request error if publisher_id is invalid', async () => {
+    const { body, status } = await request(server)
+      .post(`${MAIN_ROUTE}/${campaignId}/publishers`)
+      .send({ publisher_id: 'abc123' });
+
+    expect(status).toBe(400);
+    expect(body.error).toBe('publisher_id is invalid');
+  });
+
+  test('should return a bad request error if campaign_id is invalid', async () => {
+    const { body, status } = await request(server)
+      .post(`${MAIN_ROUTE}/abc1234/publishers`)
+      .send({ publisher_id: publisherId });
+
+    expect(status).toBe(400);
+    expect(body.error).toBe('campaign_id is invalid');
+  });
+});
+
+describe('when to remove a publisher', () => {
+  test('should remove a publisher', async () => {
+    const { status } = await request(server)
+      .delete(`${MAIN_ROUTE}/${campaignId}/publishers`)
+      .send({ publisher_id: publisherId });
+
+    expect(status).toBe(200);
+
+    const campaign = await Campaign.findById(campaignId);
+    const publishersId = campaign.publishers.map((pub) => pub.publisher_id.toString());
+
+    expect(publishersId.includes(publisherId)).toBeFalsy();
+  });
+
+  test('should return a not found error if publisher not exist', async () => {
+    const { body, status } = await request(server)
+      .delete(`${MAIN_ROUTE}/${campaignId}/publishers`)
+      .send({ publisher_id: campaignId });
+
+    expect(status).toBe(404);
+    expect(body.error).toBe('publisher not found');
+  });
+
+  test('should return a not found error if campaign not exist', async () => {
+    const { body, status } = await request(server)
+      .delete(`${MAIN_ROUTE}/${publisherId}/publishers`)
+      .send({ publisher_id: publisherId });
+
+    expect(status).toBe(404);
+    expect(body.error).toBe('campaign not found');
+  });
+
+  test('should return a bad request error if publisher_id is invalid', async () => {
+    const { body, status } = await request(server)
+      .delete(`${MAIN_ROUTE}/${campaignId}/publishers`)
+      .send({ publisher_id: 'abc123' });
+
+    expect(status).toBe(400);
+    expect(body.error).toBe('publisher_id is invalid');
+  });
+
+  test('should return a bad request error if campaign_id is invalid', async () => {
+    const { body, status } = await request(server)
+      .delete(`${MAIN_ROUTE}/abc1234/publishers`)
+      .send({ publisher_id: publisherId });
+
+    expect(status).toBe(400);
+    expect(body.error).toBe('campaign_id is invalid');
+  });
+});
+
+describe('when to update a publisher_result', () => {
+  test('should remove a publisher', async () => {
+    await request(server)
+      .post(`${MAIN_ROUTE}/${campaignId}/publishers`)
+      .send({ publisher_id: publisherId });
+
+    const { status } = await request(server)
+      .put(`${MAIN_ROUTE}/${campaignId}/publishers`)
+      .send({ publisher_id: publisherId, publisher_result: 789 });
+
+    expect(status).toBe(200);
+
+    const campaign = await Campaign.findById(campaignId);
+    const publisher = campaign.publishers.filter(
+      (pub) => pub.publisher_id.toString() === publisherId,
+    );
+
+    expect(publisher[0].publisher_result).toBe(789);
+  });
+
+  test('should return a not found error if publisher not exist', async () => {
+    const { body, status } = await request(server)
+      .put(`${MAIN_ROUTE}/${campaignId}/publishers`)
+      .send({ publisher_id: campaignId });
+
+    expect(status).toBe(404);
+    expect(body.error).toBe('publisher not found');
+  });
+
+  test('should return a not found error if campaign not exist', async () => {
+    const { body, status } = await request(server)
+      .put(`${MAIN_ROUTE}/${publisherId}/publishers`)
+      .send({ publisher_id: publisherId });
+
+    expect(status).toBe(404);
+    expect(body.error).toBe('campaign not found');
+  });
+
+  test('should return a bad request error if publisher_id is invalid', async () => {
+    const { body, status } = await request(server)
+      .put(`${MAIN_ROUTE}/${campaignId}/publishers`)
+      .send({ publisher_id: 'abc123' });
+
+    expect(status).toBe(400);
+    expect(body.error).toBe('publisher_id is invalid');
+  });
+
+  test('should return a bad request error if campaign_id is invalid', async () => {
+    const { body, status } = await request(server)
+      .put(`${MAIN_ROUTE}/abc1234/publishers`)
+      .send({ publisher_id: publisherId });
+
+    expect(status).toBe(400);
+    expect(body.error).toBe('campaign_id is invalid');
+  });
+});
+
+describe('when to delete a campaign', () => {
   test('should delete a campaign', async () => {
     const { status } = await request(server)
       .delete(`${MAIN_ROUTE}/${campaignId}`);
@@ -300,7 +483,7 @@ describe.only('when to delete a campaign', () => {
     expect(body.error).toBe('campaign not found');
   });
 
-  test.only('when to remove a campaign, should update campign_ids in advertiser', async () => {
+  test('when to remove a campaign, should update campign_ids in advertiser', async () => {
     const { body } = await request(server)
       .post(MAIN_ROUTE)
       .send(testData);

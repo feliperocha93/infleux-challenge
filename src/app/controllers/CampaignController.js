@@ -1,6 +1,12 @@
+/* eslint-disable no-param-reassign */
 /* eslint-disable no-underscore-dangle */
+const mongoose = require('../../database');
+
 const CampaignsRepository = require('../repositories/CampaignsRepository');
+const PublishersRepository = require('../repositories/PublishersRepository');
+
 const Campaign = require('../models/Campaign');
+
 const SchemaValidator = require('../utils/SchemaValidator');
 
 const AdvertiserService = require('../services/AdvertiserService');
@@ -59,16 +65,20 @@ class CampaignController {
   async update(request, response) {
     const { id } = request.params;
 
-    const campaignExist = await CampaignsRepository.findById(id);
+    const nonUpdatableFields = ['advertiser_id', 'publishers'];
+    for (const field of nonUpdatableFields) {
+      if (Object.prototype.hasOwnProperty.call(request.body, field)) {
+        return response.status(400).json({ error: `${field} can not be updated` });
+      }
+    }
 
+    const campaignExist = await CampaignsRepository.findById(id);
     if (!campaignExist) {
       return response.status(404).json({ error: 'campaign not found' });
     }
 
     const payload = { ...campaignExist._doc, ...request.body };
-
     const errors = SchemaValidator.validateAndGetErrors(Campaign, payload);
-
     if (errors.length > 0) {
       return response.status(400).json({ errors });
     }
@@ -79,6 +89,58 @@ class CampaignController {
     } catch ({ message, status }) {
       return response.status(status).json({ message });
     }
+  }
+
+  async updatePublishers(request, response) {
+    const { id } = request.params;
+    const { publisher_id, publisher_result } = request.body;
+
+    const ids = [
+      { field: 'publisher_id', value: publisher_id },
+      { field: 'campaign_id', value: id },
+    ];
+
+    for (const { field, value } of ids) {
+      if (!mongoose.isValidObjectId(value)) {
+        return response.status(400).json({ error: `${field} is invalid` });
+      }
+    }
+
+    const campaignExist = await CampaignsRepository.findById(id);
+    if (!campaignExist) {
+      return response.status(404).json({ error: 'campaign not found' });
+    }
+
+    const publisherExist = await PublishersRepository.findById(publisher_id);
+    if (!publisherExist) {
+      return response.status(404).json({ error: 'publisher not found' });
+    }
+
+    let publishers;
+    switch (request.method) {
+      case 'POST':
+        publishers = [...campaignExist.publishers, { publisher_id, publisher_result: 0 }];
+        break;
+      case 'PUT':
+        publishers = campaignExist.publishers.map((publisher) => {
+          if (publisher.publisher_id.toString() === publisher_id) {
+            publisher.publisher_result = publisher_result;
+          }
+          return publisher;
+        });
+        break;
+      case 'DELETE':
+        publishers = campaignExist.publishers.filter(
+          (publisher) => publisher.publisher_id.toString() !== publisher_id,
+        );
+        break;
+      default:
+        break;
+    }
+
+    const campaign = await CampaignsRepository.update(id, { publishers });
+
+    return response.status(200).json(campaign);
   }
 
   async delete(request, response) {
