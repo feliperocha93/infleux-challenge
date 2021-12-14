@@ -200,5 +200,5 @@ describe('when to delete a advertiser', () => {
   });
 
   // TODO: After campaign controller is done
-  test.todo('should return a error if advertiser has campaign_ids is not empty');
+  // Quando apagar uma marca, devo apagar todas as campanhas
 });

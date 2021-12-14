@@ -291,5 +291,5 @@ describe('when to delete a publisher', () => {
   });
 
   // TODO: After campaign controller is done
-  test.todo('should return a error if publisher has campaign_ids is not empty');
+  // Quando apagar um publisher, devo editar publishers_id da campanha
 });

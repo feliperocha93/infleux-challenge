@@ -38,6 +38,12 @@ class CampaignsRepository {
 
     return campaign;
   }
+
+  async remove(id) {
+    const campaign = await Campaign.findByIdAndRemove(id);
+
+    return campaign;
+  }
 }
 
 module.exports = new CampaignsRepository();

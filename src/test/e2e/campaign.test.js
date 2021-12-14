@@ -147,6 +147,9 @@ describe('when to store a campaign', () => {
     expect(status).toBe(404);
     expect(body.message).toBe(`countries_id [${randomId},${randomId}] not found`);
   });
+
+  // TODO:
+  test.todo('Quando criar uma campanha, deve atualizar no dono');
 });
 
 describe('when to find campaign', () => {
@@ -269,3 +272,27 @@ describe('when to update campaign', () => {
     expect(body.name).toBe('Updated name');
   });
 });
+
+describe.only('when to delete a campaign', () => {
+  test('should delete a campaign', async () => {
+    const { status } = await request(server)
+      .delete(`${MAIN_ROUTE}/${campaignId}`);
+
+    expect(status).toBe(204);
+
+    const campaignPublisher = await Campaign.findById(campaignId);
+
+    expect(campaignPublisher).toBeNull();
+  });
+
+  test('should return a not found error if campaign not exist', async () => {
+    const { body, status } = await request(server).delete(`${MAIN_ROUTE}/${randomId}`);
+
+    expect(status).toBe(404);
+    expect(body.error).toBe('campaign not found');
+  });
+
+  test.todo('should remove campaign_id in publishers');
+});
+
+// TODO: Criar a controller add publisher/ remove publisher

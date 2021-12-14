@@ -20,6 +20,7 @@ router.get('/campaigns/filter', CampaignController.filter);
 router.get('/campaigns/:id', CampaignController.show);
 router.get('/campaigns', CampaignController.index);
 router.put('/campaigns/:id', CampaignController.update);
+router.delete('/campaigns/:id', CampaignController.delete);
 
 router.get('/countries', CountryController.index);
 

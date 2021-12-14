@@ -77,6 +77,18 @@ class CampaignController {
       return response.status(status).json({ message });
     }
   }
+
+  async delete(request, response) {
+    const { id } = request.params;
+
+    const campaign = await CampaignsRepository.remove(id);
+
+    if (!campaign) {
+      return response.status(404).json({ error: 'campaign not found' });
+    }
+
+    return response.status(204).send();
+  }
 }
 
 module.exports = new CampaignController();
