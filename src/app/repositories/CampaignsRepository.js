@@ -44,6 +44,12 @@ class CampaignsRepository {
 
     return campaign;
   }
+
+  async removeMany(id) {
+    const campaign = await Campaign.deleteMany({ advertiser_id: id });
+
+    return campaign;
+  }
 }
 
 module.exports = new CampaignsRepository();

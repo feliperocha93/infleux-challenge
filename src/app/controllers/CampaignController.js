@@ -1,5 +1,3 @@
-/* eslint-disable no-param-reassign */
-/* eslint-disable no-underscore-dangle */
 const mongoose = require('../../database');
 
 const CampaignsRepository = require('../repositories/CampaignsRepository');

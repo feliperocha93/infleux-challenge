@@ -1,5 +1,11 @@
 const AdvertisersRepository = require('../repositories/AdvertisersRepository');
 
+const Advertiser = require('../models/Advertiser');
+
+const SchemaValidator = require('../utils/SchemaValidator');
+
+const AdvertiserService = require('../services/AdvertiserService');
+
 class AdvertiserController {
   async store(request, response) {
     const { name } = request.body;
@@ -42,15 +48,27 @@ class AdvertiserController {
   async update(request, response) {
     const { id } = request.params;
 
-    const { name } = request.body;
-
-    if (!name) {
-      return response.status(400).json({ error: 'name is required' });
+    if (Object.prototype.hasOwnProperty.call(request.body, 'campaigns_id')) {
+      return response.status(400).json({ error: 'campaigns_id can not be updated' });
     }
 
-    const advertiser = await AdvertisersRepository.update(id, { name });
+    const advertiserExist = await AdvertisersRepository.findById(id);
+    if (!advertiserExist) {
+      return response.status(404).json({ error: 'advertiser not found' });
+    }
 
-    return response.json(advertiser);
+    const payload = { ...advertiserExist._doc, ...request.body };
+    const errors = SchemaValidator.validateAndGetErrors(Advertiser, payload);
+    if (errors.length > 0) {
+      return response.status(400).json({ errors });
+    }
+
+    try {
+      const advertiser = await AdvertisersRepository.update(id, payload);
+      return response.json(advertiser);
+    } catch ({ message, status }) {
+      return response.status(status).json({ message });
+    }
   }
 
   async delete(request, response) {
@@ -61,6 +79,8 @@ class AdvertiserController {
     if (!advertiser) {
       return response.status(404).json({ error: 'advertiser not found' });
     }
+
+    await AdvertiserService.deleteAllAdvertiserCampaigns(id);
 
     return response.status(204).send();
   }

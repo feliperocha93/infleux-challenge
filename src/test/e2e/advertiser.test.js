@@ -1,6 +1,9 @@
 const request = require('supertest');
 const mongoose = require('../../database');
+
 const Advertiser = require('../../app/models/Advertiser');
+const Campaign = require('../../app/models/Campaign');
+const Country = require('../../app/models/Country');
 
 const server = require('../../index');
 
@@ -9,20 +12,45 @@ const MAIN_ROUTE = '/advertisers';
 const testData = {
   name: 'Advertiser Name',
 };
+const campaignData = {
+  name: 'Nova Campanha',
+  campaign_type: 'CPC',
+  bid: '1.00',
+  advertiser_id: '',
+  countries_id: [],
+};
+
+const advertiserData = {
+  name: 'Advertiser Name',
+};
+
+const randomId = mongoose.Types.ObjectId();
+let campaignId;
 
 function cleanDb() {
   Advertiser.deleteMany({}, {}, () => null);
+  Campaign.deleteMany({}, {}, () => null);
+  Country.deleteMany({}, {}, () => null);
 }
+
+beforeAll(async () => {
+  cleanDb();
+
+  const { _id } = await Advertiser.create(advertiserData);
+  campaignData.advertiser_id = _id.toString();
+
+  const country = await Country.create({ name: 'China' });
+  campaignData.countries_id.push(country._id.toString());
+
+  const campaign = await Campaign.create(campaignData);
+  campaignId = campaign._id;
+});
 
 afterAll(() => {
   server.close();
 });
 
 describe('when to store a advertiser', () => {
-  beforeAll(() => {
-    cleanDb();
-  });
-
   test('should create a advertisers', async () => {
     const { body, status } = await request(server)
       .post(MAIN_ROUTE)
@@ -58,7 +86,7 @@ describe('when to store a advertiser', () => {
       .post(MAIN_ROUTE)
       .send({
         name: testData.name,
-        collections_id: [1, 3, 44, 107],
+        campaigns_id: [campaignId],
       });
 
     expect(status).toBe(201);
@@ -71,7 +99,6 @@ describe('when to find a advertiser', () => {
   let findTestId;
 
   beforeAll(async () => {
-    cleanDb();
     const { _id } = await Advertiser.create({ name });
     findTestId = _id;
     Advertiser.create({ name: testData.name });
@@ -82,7 +109,7 @@ describe('when to find a advertiser', () => {
       .get(MAIN_ROUTE);
 
     expect(status).toBe(200);
-    expect(body.length).toBe(2);
+    expect(body.length).toBe(5);
   });
 
   test('should return advertiser by id', async () => {
@@ -104,15 +131,15 @@ describe('when to find a advertiser', () => {
   });
 
   test.each([
-    ['name', name],
-    ['name', testData.name],
-  ])('should return advertiser by filters', async (filter, value) => {
+    ['name', name, 1],
+    ['name', testData.name, 4],
+  ])('should return advertiser by filters', async (filter, value, length) => {
     const { body, status } = await request(server)
       .get(`${MAIN_ROUTE}/filter`)
       .query({ [filter]: value });
 
     expect(status).toBe(200);
-    expect(body.length).toBe(1);
+    expect(body.length).toBe(length);
   });
 
   // TODO: After campaign controller is done
@@ -124,27 +151,9 @@ describe('when to update a advertiser', () => {
   let updateTestId;
 
   beforeAll(async () => {
-    cleanDb();
     const { _id } = await Advertiser.create({ name });
     updateTestId = _id;
     Advertiser.create({ name: testData.name });
-  });
-
-  test.each(
-    [false, null, undefined, 0, NaN, ''],
-  )('should not update a advertiser without name', async (newName) => {
-    const { body, status } = await request(server)
-      .put(`${MAIN_ROUTE}/${updateTestId}`)
-      .send({
-        name: newName,
-      });
-
-    expect(status).toBe(400);
-    expect(body.error).toBe('name is required');
-
-    const documentNotUpdated = await Advertiser.findById(updateTestId);
-
-    expect(documentNotUpdated.name).toBe(name);
   });
 
   test('should update advertiser', async () => {
@@ -161,6 +170,28 @@ describe('when to update a advertiser', () => {
 
     expect(documentUpdated.name).toBe(testData.name);
   });
+
+  test('should return a not found error if advertiser not exist', async () => {
+    const { body, status } = await request(server)
+      .put(`${MAIN_ROUTE}/${randomId}`)
+      .send({
+        name: testData.name,
+      });
+
+    expect(status).toBe(404);
+    expect(body.error).toBe('advertiser not found');
+  });
+
+  test('should not update campaigns_id', async () => {
+    const { body, status } = await request(server)
+      .put(`${MAIN_ROUTE}/${updateTestId}`)
+      .send({
+        campaigns_id: [campaignId],
+      });
+
+    expect(status).toBe(400);
+    expect(body.error).toBe('campaigns_id can not be updated');
+  });
 });
 
 describe('when to delete a advertiser', () => {
@@ -168,7 +199,6 @@ describe('when to delete a advertiser', () => {
   let deleteTestId;
 
   beforeAll(async () => {
-    cleanDb();
     const { _id } = await Advertiser.create({ name });
     deleteTestId = _id;
     Advertiser.create({ name: testData.name });
@@ -183,6 +213,17 @@ describe('when to delete a advertiser', () => {
     const deletedAdvertiser = await Advertiser.findById(deleteTestId);
 
     expect(deletedAdvertiser).toBeNull();
+  });
+
+  test('should delete advertiser and remove all of its campaigns', async () => {
+    const { status } = await request(server)
+      .delete(`${MAIN_ROUTE}/${campaignData.advertiser_id}`);
+
+    expect(status).toBe(204);
+
+    const campaigns = await Campaign.find({ advertiser_id: campaignData.advertiser_id });
+
+    expect(campaigns.length).toBe(0);
   });
 
   test('should return a not found error if advertiser not exist', async () => {

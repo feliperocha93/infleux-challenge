@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node src/index.js",
     "start:dev": "cross-env NODE_ENV=test nodemon src/index.js",
-    "test": "cross-env NODE_ENV=test jest --detectOpenHandles --coverage",
+    "test": "cross-env NODE_ENV=test jest --detectOpenHandles --coverage --forceExit",
     "test:watch": "cross-env NODE_ENV=test jest --detectOpenHandles --watchAll --verbose=false"
   },
   "keywords": [],
