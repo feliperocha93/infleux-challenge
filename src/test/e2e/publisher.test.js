@@ -9,6 +9,7 @@ const Publisher = require('../../app/models/Publisher');
 const server = require('../../index');
 
 const MAIN_ROUTE = '/publishers';
+const CAMPAIGN_ROUTE = '/campaigns';
 
 const testData = {
   name: 'Publisher Name',
@@ -73,7 +74,7 @@ describe('when to store a publisher', () => {
   });
 
   test.each(
-    [false, null, undefined, 0, NaN, ''],
+    [null, undefined, NaN],
   )('should not create a publishers without name', async (name) => {
     const { body, status } = await request(server)
       .post(MAIN_ROUTE)
@@ -83,11 +84,11 @@ describe('when to store a publisher', () => {
       });
 
     expect(status).toBe(400);
-    expect(body.error).toBe('name is required');
+    expect(body.errors[0]).toBe('name is required');
   });
 
   test.each(
-    [false, null, undefined, 0, NaN, ''],
+    [null, undefined, NaN, ''],
   )('should not create a publishers without country_id', async (country_id) => {
     const { body, status } = await request(server)
       .post(MAIN_ROUTE)
@@ -97,7 +98,7 @@ describe('when to store a publisher', () => {
       });
 
     expect(status).toBe(400);
-    expect(body.error).toBe('country_id is required');
+    expect(body.errors[0]).toBe('country_id is required');
   });
 
   test('should not create if country_id is not exist', async () => {
@@ -126,8 +127,17 @@ describe('when to store a publisher', () => {
     expect(body.campaigns_id.length).toBe(0);
   });
 
-  // TODO: Check country_id type
-  test.todo('should not create if country_id is invalid');
+  test('should not create if country_id is invalid', async () => {
+    const { body, status } = await request(server)
+      .post(MAIN_ROUTE)
+      .send({
+        ...testData,
+        country_id: '123456',
+      });
+
+    expect(status).toBe(400);
+    expect(body.errors[0]).toBe('country_id is invalid');
+  });
 });
 
 describe('when to find a publisher', () => {
@@ -135,7 +145,6 @@ describe('when to find a publisher', () => {
   let findTestId;
 
   beforeAll(async () => {
-    cleanDb();
     const { _id } = await Publisher.create({ ...testData, name: localName });
     findTestId = _id;
     Publisher.create(testData);
@@ -146,7 +155,7 @@ describe('when to find a publisher', () => {
       .get(MAIN_ROUTE);
 
     expect(status).toBe(200);
-    expect(body.length).toBe(2);
+    expect(body.length).toBe(4);
   });
 
   test('should return publisher by id', async () => {
@@ -169,7 +178,7 @@ describe('when to find a publisher', () => {
 
   test.each([
     [localName, undefined, 1],
-    [testData.name, undefined, 1],
+    [testData.name, undefined, 3],
     [undefined, '123456abcdef', 0],
   ])('when filter by %s and %s should return %i publishers by filters', async (name, country_id, lentgh) => {
     const { body, status } = await request(server)
@@ -189,56 +198,10 @@ describe('when to update a publisher', () => {
   let updateTestId;
 
   beforeAll(async () => {
-    cleanDb();
     const { _id } = await Publisher.create({ ...testData, name: localName });
     updateTestId = _id;
     Publisher.create(testData);
   });
-
-  test('should not update if payload is empty', async () => {
-    const { body, status } = await request(server)
-      .put(`${MAIN_ROUTE}/${updateTestId}`)
-      .send({});
-
-    expect(status).toBe(400);
-    expect(body.error).toBe('payload can not be empty');
-  });
-
-  test.each(
-    [false, null, 0, NaN, ''],
-  )('should not update if name is invalid', async (newName) => {
-    const { body, status } = await request(server)
-      .put(`${MAIN_ROUTE}/${updateTestId}`)
-      .send({
-        name: newName,
-      });
-
-    expect(status).toBe(400);
-    expect(body.error).toBe('name is invalid');
-
-    const documentNotUpdated = await Publisher.findById(updateTestId);
-
-    expect(documentNotUpdated.name).toBe(localName);
-  });
-
-  test.each(
-    [false, null, 0, NaN, '', 12365487897, 'Olá mundo', 'sad4as5646sad4as5646'],
-  )('should not update if country_id is invalid', async (country_id) => {
-    const { body, status } = await request(server)
-      .put(`${MAIN_ROUTE}/${updateTestId}`)
-      .send({
-        country_id,
-      });
-
-    expect(status).toBe(400);
-    expect(body.error).toBe('country_id is invalid');
-
-    const documentNotUpdated = await Publisher.findById(updateTestId);
-
-    expect(documentNotUpdated.country_id.toString()).toBe(testData.country_id);
-  });
-
-  test.todo('should not update if campaigns_ids is invalid');
 
   test('should return a not found error if publisher not exist', async () => {
     const id = mongoose.Types.ObjectId();
@@ -262,25 +225,48 @@ describe('when to update a publisher', () => {
     expect(body.error).toBe('country_id not found');
   });
 
-  // TODO: After campaign controller is done
-  test.todo('should return a not found error if campaigns_ids not exist');
-
-  test.skip.each([
-    ['name', testData.name],
-    ['country_id', '61afdbb887143b4029d7a6b4'],
-  ])('should update publisher %s to %s', async (field, value) => {
+  test('should update publisher name', async () => {
     const { body, status } = await request(server)
       .put(`${MAIN_ROUTE}/${updateTestId}`)
       .send({
-        [field]: value,
+        name: testData.name,
       });
 
     expect(status).toBe(200);
-    expect(body[field]).toBe(value);
+    expect(body.name).toBe(testData.name);
 
     const documentUpdated = await Publisher.findById(updateTestId);
 
-    expect(documentUpdated[field]).toBe(value);
+    expect(documentUpdated.name).toBe(testData.name);
+  });
+
+  test('should update publisher country_id', async () => {
+    const country = await Country.create({ name: 'Chile' });
+    const country_id = country._id.toString();
+
+    const { body, status } = await request(server)
+      .put(`${MAIN_ROUTE}/${updateTestId}`)
+      .send({
+        country_id,
+      });
+
+    expect(status).toBe(200);
+    expect(body.country_id).toBe(country_id);
+
+    const documentUpdated = await Publisher.findById(updateTestId);
+
+    expect(documentUpdated.country_id).toBe(country_id);
+  });
+
+  test('should return a bad request error when try update campaign_id', async () => {
+    const { body, status } = await request(server)
+      .put(`${MAIN_ROUTE}/${updateTestId}`)
+      .send({
+        campaigns_id: [campaignId],
+      });
+
+    expect(status).toBe(400);
+    expect(body.error).toBe('campaigns_id can not be updated');
   });
 });
 
@@ -289,10 +275,35 @@ describe('when to delete a publisher', () => {
   let deleteTestId;
 
   beforeAll(async () => {
-    cleanDb();
     const { _id } = await Publisher.create({ ...testData, name: localName });
     deleteTestId = _id;
     Publisher.create(testData);
+  });
+
+  test('when removing a publisher should remove its id from the campaigns it was part', async () => {
+    const publisher = await Publisher.create(testData);
+    const publisherId = publisher._id.toString();
+
+    await request(server)
+      .post(`${CAMPAIGN_ROUTE}/${campaignId}/publishers`)
+      .send({ publisher_id: publisherId });
+
+    const { status } = await request(server)
+      .delete(`${MAIN_ROUTE}/${publisherId}`);
+    expect(status).toBe(204);
+
+    const campaign = await Campaign.findById(campaignId);
+    const publishersId = campaign.publishers.map((pub) => pub.publisher_id.toString());
+
+    expect(publishersId.includes(publisherId)).toBeFalsy();
+  });
+
+  test('should return a not found error if publisher not exist', async () => {
+    const { body, status } = await request(server)
+      .delete(`${MAIN_ROUTE}/${randomId}`);
+
+    expect(status).toBe(404);
+    expect(body.error).toBe('publisher not found');
   });
 
   test('should delete publisher', async () => {
@@ -304,12 +315,5 @@ describe('when to delete a publisher', () => {
     const deletedPublisher = await Publisher.findById(deleteTestId);
 
     expect(deletedPublisher).toBeNull();
-  });
-
-  test('should return a not found error if publisher not exist', async () => {
-    const { body, status } = await request(server).delete(`${MAIN_ROUTE}/${randomId}`);
-
-    expect(status).toBe(404);
-    expect(body.error).toBe('publisher not found');
   });
 });

@@ -1,4 +1,4 @@
-const Advertiser = require('../models/advertiser');
+const Advertiser = require('../models/Advertiser');
 
 class AdvertisersRepository {
   async create(payload) {

@@ -1,29 +1,30 @@
-const mongoose = require('../../database');
-
 const PublishersRepository = require('../repositories/PublishersRepository');
 const CountriesRepository = require('../repositories/CountriesRepository');
 
+const Publisher = require('../models/Publisher');
+
+const SchemaValidator = require('../utils/SchemaValidator');
+
+const CampaignService = require('../services/CampaignService');
+
 class PublisherController {
   async store(request, response) {
-    const { name, country_id } = request.body;
+    const errors = SchemaValidator.validateAndGetErrors(Publisher, request.body);
 
-    if (!name) {
-      return response.status(400).json({ error: 'name is required' });
+    if (errors.length > 0) {
+      return response.status(400).json({ errors });
     }
+    try {
+      const countryIdExist = await CountriesRepository.findById(request.body.country_id);
+      if (!countryIdExist) {
+        return response.status(404).json({ error: 'country_id not found' });
+      }
+      const publisher = await PublishersRepository.create(request.body);
 
-    if (!country_id) {
-      return response.status(400).json({ error: 'country_id is required' });
+      return response.status(201).json(publisher);
+    } catch ({ message, status }) {
+      return response.status(status).json({ message });
     }
-
-    const countryIdExist = await CountriesRepository.findById(country_id);
-
-    if (!countryIdExist) {
-      return response.status(404).json({ error: 'country_id not found' });
-    }
-
-    const publisher = await PublishersRepository.create({ name, country_id });
-
-    return response.status(201).json(publisher);
   }
 
   async index(request, response) {
@@ -54,41 +55,34 @@ class PublisherController {
 
   async update(request, response) {
     const { id } = request.params;
-    const { name, country_id } = request.body;
+    const { country_id } = request.body;
 
-    if (Object.keys(request.body).length === 0) {
-      return response.status(400).json({ error: 'payload can not be empty' });
+    if (Object.prototype.hasOwnProperty.call(request.body, 'campaigns_id')) {
+      return response.status(400).json({ error: 'campaigns_id can not be updated' });
     }
 
-    if (
-      Object.prototype.hasOwnProperty.call(request.body, 'name')
-      && (typeof name !== 'string' || name.length === 0)
-    ) {
-      return response.status(400).json({ error: 'name is invalid' });
-    }
-
-    if (
-      Object.prototype.hasOwnProperty.call(request.body, 'country_id')
-      && !(mongoose.Types.ObjectId.isValid(String(country_id)))
-    ) {
-      return response.status(400).json({ error: 'country_id is invalid' });
+    const countryIdExist = country_id && await CountriesRepository.findById(country_id);
+    if (country_id && !countryIdExist) {
+      return response.status(404).json({ error: 'country_id not found' });
     }
 
     const publisherExist = await PublishersRepository.findById(id);
-
     if (!publisherExist) {
       return response.status(404).json({ error: 'publisher not found' });
     }
 
-    const countryIdExist = await CountriesRepository.findById(country_id);
-
-    if (!countryIdExist) {
-      return response.status(404).json({ error: 'country_id not found' });
+    const payload = { ...publisherExist._doc, ...request.body };
+    const errors = SchemaValidator.validateAndGetErrors(Publisher, payload);
+    if (errors.length > 0) {
+      return response.status(400).json({ errors });
     }
 
-    const publisher = await PublishersRepository.update(id, { name, country_id });
-
-    return response.json(publisher);
+    try {
+      const publisher = await PublishersRepository.update(id, payload);
+      return response.status(200).json(publisher);
+    } catch ({ message, status }) {
+      return response.status(status).json({ message });
+    }
   }
 
   async delete(request, response) {
@@ -99,6 +93,8 @@ class PublisherController {
     if (!publisher) {
       return response.status(404).json({ error: 'publisher not found' });
     }
+
+    await CampaignService.removePublisher(id);
 
     return response.status(204).send();
   }
