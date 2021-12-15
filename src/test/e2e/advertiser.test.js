@@ -12,6 +12,7 @@ const MAIN_ROUTE = '/advertisers';
 const testData = {
   name: 'Advertiser Name',
 };
+
 const campaignData = {
   name: 'Nova Campanha',
   campaign_type: 'CPC',
@@ -69,7 +70,7 @@ describe('when to store a advertiser', () => {
   });
 
   test.each(
-    [false, null, undefined, 0, NaN, ''],
+    [null, undefined, '', NaN],
   )('should not create a advertisers without name', async (name) => {
     const { body, status } = await request(server)
       .post(MAIN_ROUTE)
@@ -78,7 +79,7 @@ describe('when to store a advertiser', () => {
       });
 
     expect(status).toBe(400);
-    expect(body.error).toBe('name is required');
+    expect(body.errors[0]).toBe('name is required');
   });
 
   test('should not save campaigns on create advertiser', async () => {

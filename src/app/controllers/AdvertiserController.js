@@ -8,15 +8,18 @@ const AdvertiserService = require('../services/AdvertiserService');
 
 class AdvertiserController {
   async store(request, response) {
-    const { name } = request.body;
+    const errors = SchemaValidator.validateAndGetErrors(Advertiser, request.body);
 
-    if (!name) {
-      return response.status(400).json({ error: 'name is required' });
+    if (errors.length > 0) {
+      return response.status(400).json({ errors });
     }
 
-    const advertiser = await AdvertisersRepository.create({ name });
-
-    return response.status(201).json(advertiser);
+    try {
+      const advertiser = await AdvertisersRepository.create(request.body);
+      return response.status(201).json(advertiser);
+    } catch ({ message, status }) {
+      return response.status(status).json({ message });
+    }
   }
 
   async index(request, response) {
