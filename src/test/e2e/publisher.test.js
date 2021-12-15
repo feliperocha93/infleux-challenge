@@ -1,33 +1,61 @@
 const request = require('supertest');
 const mongoose = require('../../database');
+
+const Advertiser = require('../../app/models/Advertiser');
+const Campaign = require('../../app/models/Campaign');
+const Country = require('../../app/models/Country');
 const Publisher = require('../../app/models/Publisher');
 
 const server = require('../../index');
 
 const MAIN_ROUTE = '/publishers';
 
-// TODO: country_id must be taked in DB
 const testData = {
   name: 'Publisher Name',
-  country_id: '61afdbb887143b4029d7a6b3',
+  country_id: '',
 };
 
-// TODO: Try make it automatic
-const randomId = '61b3ec4225c8549f886d1af8';
+const campaignData = {
+  name: 'Nova Campanha',
+  campaign_type: 'CPC',
+  bid: '1.00',
+  advertiser_id: '',
+  countries_id: [],
+};
 
-function cleanDb() {
+const advertiserData = {
+  name: 'Advertiser Name',
+};
+
+const randomId = mongoose.Types.ObjectId();
+let campaignId;
+
+async function cleanDb() {
+  Advertiser.deleteMany({}, {}, () => null);
+  Campaign.deleteMany({}, {}, () => null);
+  Country.deleteMany({}, {}, () => null);
   Publisher.deleteMany({}, {}, () => null);
 }
+
+beforeAll(async () => {
+  cleanDb();
+
+  const { _id } = await Advertiser.create(advertiserData);
+  campaignData.advertiser_id = _id.toString();
+
+  const country = await Country.create({ name: 'China' });
+  campaignData.countries_id.push(country._id.toString());
+  testData.country_id = country._id.toString();
+
+  const campaign = await Campaign.create(campaignData);
+  campaignId = campaign._id;
+});
 
 afterAll(() => {
   server.close();
 });
 
 describe('when to store a publisher', () => {
-  beforeAll(() => {
-    cleanDb();
-  });
-
   test('should create a publishers', async () => {
     const { body, status } = await request(server)
       .post(MAIN_ROUTE)
@@ -87,12 +115,11 @@ describe('when to store a publisher', () => {
   });
 
   test('should not save campaigns on create publishers', async () => {
-    const id = mongoose.Types.ObjectId;
     const { body, status } = await request(server)
       .post(MAIN_ROUTE)
       .send({
         ...testData,
-        campaigns_id: [id],
+        campaigns_id: [campaignId],
       });
 
     expect(status).toBe(201);
@@ -143,8 +170,7 @@ describe('when to find a publisher', () => {
   test.each([
     [localName, undefined, 1],
     [testData.name, undefined, 1],
-    [undefined, testData.country_id, 2],
-    [undefined, randomId, 0],
+    [undefined, '123456abcdef', 0],
   ])('when filter by %s and %s should return %i publishers by filters', async (name, country_id, lentgh) => {
     const { body, status } = await request(server)
       .get(`${MAIN_ROUTE}/filter`)
