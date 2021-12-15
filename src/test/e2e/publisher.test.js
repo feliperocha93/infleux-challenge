@@ -188,9 +188,6 @@ describe('when to find a publisher', () => {
     expect(status).toBe(200);
     expect(body.length).toBe(lentgh);
   });
-
-  // TODO: After campaign controller is done
-  test.todo('should return publisher by campaign_id');
 });
 
 describe('when to update a publisher', () => {

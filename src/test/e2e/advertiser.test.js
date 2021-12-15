@@ -141,9 +141,6 @@ describe('when to find a advertiser', () => {
     expect(status).toBe(200);
     expect(body.length).toBe(length);
   });
-
-  // TODO: After campaign controller is done
-  test.todo('should return advertiser by campaign_id');
 });
 
 describe('when to update a advertiser', () => {
