@@ -8,17 +8,9 @@ This is an API to connect advertisers to publishers. The advirtisers can create 
 
 ## Tech Stack
 
-**Server:** Node, Express
-**Database:** MongoDB
-**Tests:** Jest, Supertest
-
-## Before Run
-
-Before run locally or run test, you must insert some countries in DB
-
-```
-db.countries.insert([{"name": "Brazil"}, {"name": "USA"}, {"name": "Canada"}, {"name": "Mexico"}])
-```
+**Server:** Node, Express  
+**Database:** MongoDB  
+**Tests:** Jest, Supertest  
 
 ## Run Locally
 
