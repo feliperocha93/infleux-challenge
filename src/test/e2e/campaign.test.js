@@ -356,11 +356,10 @@ describe('when to set a publisher', () => {
   });
 });
 
-describe('when to remove a publisher', () => {
+describe.only('when to remove a publisher', () => {
   test('should remove a publisher', async () => {
     const { status } = await request(server)
-      .delete(`${MAIN_ROUTE}/${campaignId}/publishers`)
-      .send({ publisher_id: publisherId });
+      .delete(`${MAIN_ROUTE}/${campaignId}/publishers/${publisherId}`);
 
     expect(status).toBe(200);
 
@@ -372,8 +371,7 @@ describe('when to remove a publisher', () => {
 
   test('should return a not found error if publisher not exist', async () => {
     const { body, status } = await request(server)
-      .delete(`${MAIN_ROUTE}/${campaignId}/publishers`)
-      .send({ publisher_id: campaignId });
+      .delete(`${MAIN_ROUTE}/${campaignId}/publishers/${campaignId}`);
 
     expect(status).toBe(404);
     expect(body.error).toBe('publisher not found');
@@ -381,8 +379,7 @@ describe('when to remove a publisher', () => {
 
   test('should return a not found error if campaign not exist', async () => {
     const { body, status } = await request(server)
-      .delete(`${MAIN_ROUTE}/${publisherId}/publishers`)
-      .send({ publisher_id: publisherId });
+      .delete(`${MAIN_ROUTE}/${publisherId}/publishers/${publisherId}`);
 
     expect(status).toBe(404);
     expect(body.error).toBe('campaign not found');
@@ -390,8 +387,7 @@ describe('when to remove a publisher', () => {
 
   test('should return a bad request error if publisher_id is invalid', async () => {
     const { body, status } = await request(server)
-      .delete(`${MAIN_ROUTE}/${campaignId}/publishers`)
-      .send({ publisher_id: 'abc123' });
+      .delete(`${MAIN_ROUTE}/${campaignId}/publishers/abc123`);
 
     expect(status).toBe(400);
     expect(body.error).toBe('publisher_id is invalid');
@@ -399,8 +395,7 @@ describe('when to remove a publisher', () => {
 
   test('should return a bad request error if campaign_id is invalid', async () => {
     const { body, status } = await request(server)
-      .delete(`${MAIN_ROUTE}/abc1234/publishers`)
-      .send({ publisher_id: publisherId });
+      .delete(`${MAIN_ROUTE}/abc1234/publishers/${publisherId}`);
 
     expect(status).toBe(400);
     expect(body.error).toBe('campaign_id is invalid');
