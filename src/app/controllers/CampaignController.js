@@ -118,6 +118,10 @@ class CampaignController {
     switch (request.method) {
       case 'POST':
         publishers = [...campaignExist.publishers, { publisher_id, publisher_result: 0 }];
+        await PublishersRepository.update(
+          publisher_id,
+          { campaigns_id: [...publisherExist._doc.campaigns_id, id] },
+        );
         break;
       case 'PUT':
         publishers = campaignExist.publishers.map((publisher) => {
