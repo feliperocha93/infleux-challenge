@@ -22,7 +22,7 @@ router.get('/campaigns/:id', CampaignController.show);
 router.get('/campaigns', CampaignController.index);
 router.put('/campaigns/:id/publishers', CampaignController.updatePublishers);
 router.put('/campaigns/:id', CampaignController.update);
-router.delete('/campaigns/:id/publishers', CampaignController.updatePublishers);
+router.delete('/campaigns/:id/publishers/:publisher_id', CampaignController.updatePublishers);
 router.delete('/campaigns/:id', CampaignController.delete);
 
 router.get('/countries', CountryController.index);

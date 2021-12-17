@@ -91,7 +91,9 @@ class CampaignController {
 
   async updatePublishers(request, response) {
     const { id } = request.params;
-    const { publisher_id, publisher_result } = request.body;
+    const { publisher_result } = request.body;
+
+    const publisher_id = request.body.publisher_id || request.params.publisher_id;
 
     const ids = [
       { field: 'publisher_id', value: publisher_id },
@@ -110,6 +112,7 @@ class CampaignController {
     }
 
     const publisherExist = await PublishersRepository.findById(publisher_id);
+
     if (!publisherExist) {
       return response.status(404).json({ error: 'publisher not found' });
     }
@@ -134,6 +137,14 @@ class CampaignController {
       case 'DELETE':
         publishers = campaignExist.publishers.filter(
           (publisher) => publisher.publisher_id.toString() !== publisher_id,
+        );
+        await PublishersRepository.update(
+          publisher_id,
+          {
+            campaigns_id: publisherExist._doc.campaigns_id.filter(
+              (camp) => camp !== id,
+            ),
+          },
         );
         break;
       default:
